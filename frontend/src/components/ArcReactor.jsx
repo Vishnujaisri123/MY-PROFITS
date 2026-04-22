@@ -156,8 +156,8 @@ const styles = {
   },
   flipCard: {
     position: "relative",
-    width: "320px",
-    height: "320px",
+    width: "clamp(200px, 80vw, 320px)",
+    height: "clamp(200px, 80vw, 320px)",
     transformStyle: "preserve-3d",
     transition: "transform 0.7s cubic-bezier(0.4, 0.2, 0.2, 1)",
   },
