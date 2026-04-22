@@ -35,7 +35,7 @@ function connect() {
     try {
       const message = JSON.parse(event.data);
       if (message.type === "PORTFOLIO_UPDATE" && messageCallback) {
-        messageCallback(message);
+        messageCallback(message);   // full message — App.jsx reads message.prices
       }
     } catch (err) {
       console.error("❌ WebSocket parse error:", err);
