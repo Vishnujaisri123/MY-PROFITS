@@ -1,14 +1,19 @@
 // backend/src/priceService.js
-// Primary:  metals.live  (free, no API key, works from cloud servers)
-// Fallback: fawazahmed0 currency API via jsDelivr CDN (also free, no key)
-// USD→INR:  open.er-api.com (already working on Render ✅)
+//
+// PRIMARY:  fawazahmed0 currency API (CDN-hosted, free, no key, works everywhere)
+//           https://github.com/fawazahmed0/exchange-api
+//           Returns XAU (gold) and XAG (silver) rates vs USD
+//
+// FALLBACK: Cloudflare Pages mirror of same API
+//
+// USD→INR: open.er-api.com (confirmed working on Render ✅)
 
 import axios from "axios";
 
 // ─── API endpoints ─────────────────────────────────────────────────────────
-const METALS_URL   = "https://metals.live/api/v1/spot";
-const BACKUP_GOLD  = "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.json";
-const FX_URL       = "https://open.er-api.com/v6/latest/USD";
+const CURRENCY_PRIMARY  = "https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/usd.min.json";
+const CURRENCY_FALLBACK = "https://latest.currency-api.pages.dev/v1/currencies/usd.min.json";
+const FX_URL            = "https://open.er-api.com/v6/latest/USD";
 
 // ─── Cache ─────────────────────────────────────────────────────────────────
 let cachedPrices  = { gold: null, silver: null, lastUpdated: 0 };
@@ -18,6 +23,7 @@ let fxLastUpdated = 0;
 // ─── USD → INR  (refresh every 60 min) ─────────────────────────────────────
 async function getUsdInr() {
   if (usdInr && Date.now() - fxLastUpdated < 60 * 60 * 1000) return usdInr;
+
   const res  = await axios.get(FX_URL, { timeout: 8000 });
   usdInr        = res.data.rates.INR;
   fxLastUpdated = Date.now();
@@ -25,44 +31,25 @@ async function getUsdInr() {
   return usdInr;
 }
 
-// ─── Primary: metals.live ──────────────────────────────────────────────────
-// Returns: [{ gold: 3300.5, silver: 32.5, ... }]  (USD per troy oz)
-async function fetchFromMetalsLive(inr) {
-  const res     = await axios.get(METALS_URL, {
-    headers: { "User-Agent": "Mozilla/5.0" },
-    timeout: 10000,
-  });
+// ─── Fetch from fawazahmed0 API (returns XAU, XAG vs USD) ──────────────────
+// xau = troy oz of gold per 1 USD  →  gold price = 1/xau  (USD per oz)
+// xag = troy oz of silver per 1 USD → silver price = 1/xag (USD per oz)
+async function fetchFromCurrencyApi(url, inr) {
+  const res   = await axios.get(url, { timeout: 10000 });
+  const rates = res.data?.usd;
 
-  const data        = Array.isArray(res.data) ? res.data[0] : res.data;
-  const goldUsdOz   = data.gold;
-  const silverUsdOz = data.silver;
+  if (!rates?.xau || !rates?.xag) throw new Error("Missing xau/xag in response");
 
-  if (!goldUsdOz || !silverUsdOz) throw new Error("metals.live: missing gold/silver data");
+  const goldUsdOz   = 1 / rates.xau;
+  const silverUsdOz = 1 / rates.xag;
 
+  // Convert: USD/oz → INR/gram  |  USD/oz → INR/kg
   cachedPrices.gold        = Number(((goldUsdOz   * inr) / 31.1035).toFixed(2));
   cachedPrices.silver      = Number(((silverUsdOz * inr) / 31.1035 * 1000).toFixed(2));
   cachedPrices.lastUpdated = Date.now();
 
-  console.log(`✅ metals.live — Gold ₹${cachedPrices.gold}/g | Silver ₹${cachedPrices.silver}/kg`);
-}
-
-// ─── Fallback: fawazahmed0 currency API (jsDelivr CDN) ────────────────────
-// XAU = troy oz of gold in USD → invert to get USD price per oz
-async function fetchFromCurrencyApi(inr) {
-  const res          = await axios.get(BACKUP_GOLD, { timeout: 10000 });
-  const rates        = res.data.usd;
-
-  // rates.xau = how many troy oz you get per 1 USD → invert for USD/oz
-  const goldUsdOz    = 1 / rates.xau;
-  const silverUsdOz  = 1 / rates.xag;
-
-  if (!goldUsdOz || !silverUsdOz) throw new Error("Currency API: missing xau/xag");
-
-  cachedPrices.gold        = Number(((goldUsdOz   * inr) / 31.1035).toFixed(2));
-  cachedPrices.silver      = Number(((silverUsdOz * inr) / 31.1035 * 1000).toFixed(2));
-  cachedPrices.lastUpdated = Date.now();
-
-  console.log(`✅ [fallback] currency API — Gold ₹${cachedPrices.gold}/g | Silver ₹${cachedPrices.silver}/kg`);
+  console.log(`✅ Live prices — Gold ₹${cachedPrices.gold}/g | Silver ₹${cachedPrices.silver}/kg`);
+  console.log(`   (Gold: $${goldUsdOz.toFixed(2)}/oz | Silver: $${silverUsdOz.toFixed(2)}/oz | USD/INR: ${inr.toFixed(2)})`);
 }
 
 // ─── Fetch with automatic fallback ─────────────────────────────────────────
@@ -70,10 +57,10 @@ async function fetchPrices() {
   const inr = await getUsdInr();
 
   try {
-    await fetchFromMetalsLive(inr);
+    await fetchFromCurrencyApi(CURRENCY_PRIMARY, inr);
   } catch (primaryErr) {
-    console.warn(`⚠️  metals.live failed (${primaryErr.message}) — trying fallback...`);
-    await fetchFromCurrencyApi(inr);  // throws if this also fails
+    console.warn(`⚠️  Primary API failed (${primaryErr.message}) — trying fallback...`);
+    await fetchFromCurrencyApi(CURRENCY_FALLBACK, inr);
   }
 }
 
@@ -93,7 +80,7 @@ export async function fetchLivePrices() {
   } catch (err) {
     console.error("❌ All price sources failed:", err.message);
 
-    // Return last cached prices so app stays alive
+    // Return last known cached price so app stays alive
     if (cachedPrices.gold) {
       return {
         gold:      tick("gold",   cachedPrices.gold),
@@ -105,7 +92,7 @@ export async function fetchLivePrices() {
   }
 }
 
-// ─── Tick simulation (1-second visual movement on cached base) ──────────────
+// ─── Tick simulation (1-second visual movement on cached base price) ────────
 let lastTick = { gold: null, silver: null };
 
 function tick(type, basePrice) {
