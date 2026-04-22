@@ -1,0 +1,338 @@
+/* ===== GLOBAL HUD THEME ===== */
+
+:root {
+  --neon: #00ffe1;
+  --danger: #ff4d4d;
+  --bg-dark: #02060d;
+  --panel: rgba(0, 15, 35, 0.65);
+}
+
+/* ===== GLOBAL OVERFLOW FIX ===== */
+html,
+body,
+#root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  overflow: hidden; /* 🔒 stops page scroll */
+}
+
+/* Glass panel */
+.glass {
+  background: var(--panel);
+  backdrop-filter: blur(16px);
+  border-radius: 16px;
+  border: 1px solid rgba(0, 255, 255, 0.25);
+  box-shadow:
+    inset 0 0 20px rgba(0, 255, 255, 0.05),
+    0 0 25px rgba(0, 255, 255, 0.15);
+}
+
+/* Neon text */
+.neon {
+  color: var(--neon);
+  text-shadow: 0 0 10px rgba(0, 255, 225, 0.8);
+}
+
+/* Profit & loss pulse */
+.pulse-profit {
+  animation: profitPulse 2s infinite;
+}
+.pulse-loss {
+  animation: lossPulse 2s infinite;
+}
+
+@keyframes profitPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 12px rgba(0, 255, 255, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 12px rgba(0, 255, 255, 0.25);
+  }
+}
+@keyframes lossPulse {
+  0%,
+  100% {
+    box-shadow: 0 0 12px rgba(0, 255, 255, 0.25);
+  }
+  50% {
+    box-shadow: 0 0 12px rgba(0, 255, 255, 0.25);
+  }
+}
+/* Hover animation for glass cards */
+.glass:hover {
+  transform: scale(1.01);
+  transition: 0.3s ease;
+}
+/* ===== ARC REACTOR CORE ===== */
+
+.arc-core {
+  position: relative;
+  width: 320px;
+  height: 320px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(0, 255, 255, 0.25),
+    rgba(0, 0, 0, 0.9)
+  );
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 12px rgba(0, 255, 255, 0.25);
+  transform-style: preserve-3d;
+  transition: transform 0.3s ease-out;
+  will-change: transform;
+}
+
+/* PROFIT / LOSS STATE */
+.arc-profit {
+  box-shadow: 0 0 60px rgba(0, 255, 255, 0.8);
+}
+.arc-loss {
+  box-shadow: 0 0 60px rgba(255, 60, 60, 0.8);
+}
+
+/* RINGS */
+.ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 2px solid rgba(0, 255, 255, 0.4);
+}
+
+.ring-outer {
+  width: 100%;
+  height: 100%;
+  animation: rotateSlow 28s linear infinite;
+}
+
+.ring-middle {
+  width: 240px;
+  height: 240px;
+  animation: rotateReverse 18s linear infinite;
+}
+
+.ring-inner {
+  width: 160px;
+  height: 160px;
+  animation: rotateSlow 12s linear infinite;
+}
+
+/* CENTER TEXT */
+.arc-core .center {
+  text-align: center;
+}
+
+/* ANIMATIONS */
+@keyframes rotateSlow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes rotateReverse {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+@keyframes rotateSlow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes rotateReverse {
+  from {
+    transform: rotate(360deg);
+  }
+  to {
+    transform: rotate(0deg);
+  }
+}
+.ring-outer {
+  animation: rotateSlow linear infinite;
+}
+.ring-middle {
+  animation: rotateReverse linear infinite;
+}
+.ring-inner {
+  animation: rotateSlow linear infinite;
+}
+/* ===== ARC ENERGY SURGE ===== */
+
+.arc-surge::after {
+  content: "";
+  position: absolute;
+  width: 140%;
+  height: 140%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(0, 255, 255, 0.35),
+    rgba(0, 255, 255, 0.05),
+    transparent
+  );
+  animation: surgeFlash 0.4s ease-out;
+}
+
+@keyframes surgeFlash {
+  from {
+    transform: scale(0.7);
+    opacity: 0.9;
+  }
+  to {
+    transform: scale(1.1);
+    opacity: 0;
+  }
+}
+/* ===== HUD RADIAL TICKS ===== */
+
+.hud-ticks {
+  position: absolute;
+  width: 120%;
+  height: 120%;
+  border-radius: 50%;
+  pointer-events: none;
+  background: repeating-conic-gradient(
+    from 0deg,
+    rgba(0, 255, 255, 0.7) 0deg 2deg,
+    transparent 2deg 10deg
+  );
+  mask-image: radial-gradient(circle, transparent 58%, black 60%);
+  opacity: 0.6;
+}
+
+/* ===== HUD CONNECTOR LINES ===== */
+
+.hud-connector {
+  position: absolute;
+  width: 2px;
+  height: 40px;
+  background: linear-gradient(
+    to bottom,
+    rgba(0, 255, 255, 0.9),
+    rgba(0, 255, 255, 0.1)
+  );
+  animation: connectorPulse 3s infinite ease-in-out;
+}
+
+/* Positions */
+.hud-connector.top {
+  top: -42px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+.hud-connector.bottom {
+  bottom: -42px;
+  left: 50%;
+  transform: translateX(-50%) rotate(180deg);
+}
+.hud-connector.left {
+  left: -42px;
+  top: 50%;
+  transform: translateY(-50%) rotate(-90deg);
+}
+.hud-connector.right {
+  right: -42px;
+  top: 50%;
+  transform: translateY(-50%) rotate(90deg);
+}
+
+/* Subtle pulse */
+@keyframes connectorPulse {
+  0%,
+  100% {
+    opacity: 0.4;
+  }
+  50% {
+    opacity: 1;
+  }
+}
+.flash-up {
+  animation: flashUp 0.4s ease;
+  color: #00ffe1;
+}
+
+.flash-down {
+  animation: flashDown 0.4s ease;
+  color: #ff4d4d;
+}
+
+@keyframes flashUp {
+  from {
+    color: #00ffe1;
+  }
+  to {
+    color: #e6ffff;
+  }
+}
+
+@keyframes flashDown {
+  from {
+    color: #ff4d4d;
+  }
+  to {
+    color: #e6ffff;
+  }
+}
+:root {
+  --hud-primary: #9ffcff; /* soft cyan (not neon) */
+  --hud-secondary: #b6c6d6; /* cool gray-blue */
+  --hud-muted: #7d8fa3; /* labels */
+  --hud-profit: #00e6c3; /* refined teal */
+  --hud-loss: #ff5c5c; /* calm red */
+  --hud-white: #e6f1ff;
+}
+/* ===== VALUE CHANGE MICRO-ANIMATION ===== */
+.hud-value {
+  transition:
+    letter-spacing 0.4s ease,
+    transform 0.4s ease,
+    color 0.4s ease;
+}
+
+.hud-value.changed {
+  letter-spacing: 2px;
+  transform: scale(1.03);
+}
+/* ===== COLOR TEMPERATURE ===== */
+.hud-cool {
+  color: var(--hud-profit);
+}
+
+.hud-warm {
+  color: var(--hud-loss);
+}
+:root {
+  --hud-primary: #8fefff; /* softer cyan */
+  --hud-secondary: #c7d4e4; /* readable gray */
+  --hud-muted: #94a6bb; /* labels */
+  --hud-profit: #00d6b4; /* teal */
+  --hud-loss: #ff6b6b; /* warm red */
+  --hud-white: #eef6ff;
+}
+/* ===== DARK GOLD THEME ===== */
+.theme-gold {
+  --hud-primary: #ffd36a;
+  --hud-secondary: #e6d3a3;
+  --hud-muted: #bfae7a;
+  --hud-profit: #ffd36a;
+  --hud-loss: #ff7a7a;
+  --hud-white: #fff4cc;
+}
+.ap-market strong {
+  color: #ffd36a;
+}
+.ap-market .price {
+  color: #ffd36a;
+}
