@@ -318,6 +318,9 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     gap: "12px",
+    background: "rgba(5, 12, 25, 0.85)",
+    border: "1px solid rgba(0, 255, 225, 0.15)",
+    boxShadow: "inset 0 0 20px rgba(0, 255, 225, 0.05)",
   },
   editHeader: {
     display: "flex",
