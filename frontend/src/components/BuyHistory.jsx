@@ -157,9 +157,17 @@ export default function BuyHistory({
       {editMode && (
         <div className="glass" style={styles.editPanel}>
           <div style={styles.editHeader}>
-            <span style={{ color: accentColor, letterSpacing: "2px", fontSize: "12px" }}>
-              ✏ EDIT {title} HOLDINGS
-            </span>
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <button
+                style={{ ...styles.backBtn, borderColor: accentColor, color: accentColor }}
+                onClick={handleEditToggle}
+              >
+                ← BACK
+              </button>
+              <span style={{ color: accentColor, letterSpacing: "2px", fontSize: "12px" }}>
+                ✏ EDIT {title} HOLDINGS
+              </span>
+            </div>
             <span style={styles.sub}>Changes saved automatically</span>
           </div>
 
@@ -229,24 +237,27 @@ function fmt(n) {
 }
 
 /* ── Styles ─────────────────────────────────────────────────────── */
+/* ── Styles ─────────────────────────────────────────────────────── */
 const styles = {
-  wrapper:  { display: "flex", flexDirection: "column", gap: "12px" },
-  scene:    { perspective: "1200px", cursor: "pointer" },
+  wrapper:  { display: "flex", flexDirection: "column", gap: "16px", flex: 1 },
+  scene:    { perspective: "1200px", cursor: "pointer", height: "100%" },
   card: {
     position: "relative",
     width: "100%",
     minHeight: "460px",
+    height: "100%",
     borderRadius: "16px",
     transformStyle: "preserve-3d",
-    transition: "transform 0.75s cubic-bezier(.4,.2,.2,1)",
+    transition: "transform 0.8s cubic-bezier(.34, 1.56, .64, 1)",
   },
   face: {
     position: "absolute",
     inset: 0,
-    padding: "20px",
+    padding: "24px",
     backfaceVisibility: "hidden",
     borderRadius: "16px",
-    overflow: "hidden",
+    display: "flex",
+    flexDirection: "column",
   },
   back: {
     transform: "rotateY(180deg)",
@@ -256,112 +267,127 @@ const styles = {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: "14px",
+    marginBottom: "18px",
   },
   title: {
-    fontSize: "13px",
-    letterSpacing: "2px",
+    fontSize: "14px",
+    letterSpacing: "3px",
     margin: 0,
-    fontFamily: "Orbitron, Arial",
+    fontFamily: "Orbitron, sans-serif",
+    textTransform: "uppercase",
   },
   editBtn: {
-    background: "transparent",
+    background: "rgba(255,255,255,0.05)",
     border: "1px solid",
-    borderRadius: "6px",
-    padding: "4px 10px",
-    fontSize: "10px",
+    borderRadius: "8px",
+    padding: "6px 12px",
+    fontSize: "11px",
     letterSpacing: "1px",
     cursor: "pointer",
-    fontFamily: "Orbitron, Arial",
-    transition: "opacity 0.2s",
+    fontFamily: "Orbitron, sans-serif",
+    transition: "all 0.3s ease",
   },
   row: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: "12px 14px",
-    marginBottom: "10px",
-    borderRadius: "10px",
+    padding: "14px 16px",
+    marginBottom: "12px",
+    borderRadius: "12px",
     border: "1px solid",
-    background: "rgba(0,20,50,0.5)",
+    background: "rgba(0, 0, 0, 0.4)",
+    transition: "transform 0.3s ease",
   },
-  rowMain: { fontSize: "16px", fontWeight: "bold", marginBottom: "2px" },
-  sub:     { fontSize: "11px", opacity: 0.7 },
-  summary: { marginTop: "14px", borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "12px" },
+  rowMain: { fontSize: "16px", fontWeight: "600", marginBottom: "4px", fontFamily: "Inter, sans-serif" },
+  sub:     { fontSize: "11px", opacity: 0.6, fontFamily: "Inter, sans-serif" },
+  summary: { marginTop: "auto", borderTop: "1px solid rgba(255,255,255,0.1)", paddingTop: "16px" },
   totalProfit: {
-    marginTop: "10px",
-    fontSize: "17px",
-    fontFamily: "Orbitron, Arial",
-    letterSpacing: "1px",
+    marginTop: "12px",
+    fontSize: "18px",
+    fontFamily: "Orbitron, sans-serif",
+    letterSpacing: "1.5px",
     fontWeight: "bold",
     textAlign: "right",
   },
-  tapHint: { marginTop: "12px", fontSize: "10px", opacity: 0.45, letterSpacing: "2px", textAlign: "center" },
+  tapHint: { marginTop: "16px", fontSize: "10px", opacity: 0.4, letterSpacing: "3px", textAlign: "center", fontFamily: "Inter, sans-serif" },
 
   /* Edit panel */
   editPanel: {
-    padding: "18px 20px",
-    borderRadius: "14px",
+    padding: "24px",
+    borderRadius: "16px",
     display: "flex",
     flexDirection: "column",
-    gap: "10px",
+    gap: "12px",
   },
   editHeader: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: "4px",
+    marginBottom: "10px",
   },
   editLabelRow: {
     display: "grid",
-    gridTemplateColumns: "1fr 1fr 28px",
-    gap: "10px",
-    marginBottom: "-4px",
+    gridTemplateColumns: "1fr 1fr 34px",
+    gap: "12px",
+    marginBottom: "4px",
   },
-  editLabel: { fontSize: "10px", opacity: 0.6, letterSpacing: "1px" },
+  editLabel: { fontSize: "11px", opacity: 0.6, letterSpacing: "1px", fontFamily: "Inter, sans-serif" },
   editRow: {
     display: "grid",
-    gridTemplateColumns: "1fr 1fr 28px",
-    gap: "10px",
+    gridTemplateColumns: "1fr 1fr 34px",
+    gap: "12px",
     alignItems: "center",
   },
   input: {
-    background: "rgba(0,20,50,0.7)",
-    border: "1px solid rgba(0,255,225,0.3)",
+    background: "rgba(0, 0, 0, 0.5)",
+    border: "1px solid rgba(255, 255, 255, 0.2)",
     borderRadius: "8px",
-    padding: "8px 10px",
-    color: "#e6ffff",
+    padding: "10px",
+    color: "var(--hud-white)",
     fontSize: "14px",
-    fontFamily: "Orbitron, Arial",
+    fontFamily: "Inter, sans-serif",
     width: "100%",
     boxSizing: "border-box",
     outline: "none",
+    transition: "border-color 0.3s ease",
   },
   deleteBtn: {
-    background: "rgba(255,60,60,0.15)",
-    border: "1px solid rgba(255,60,60,0.5)",
-    borderRadius: "6px",
-    color: "#ff6b6b",
+    background: "rgba(255,77,77,0.1)",
+    border: "1px solid rgba(255,77,77,0.4)",
+    borderRadius: "8px",
+    color: "var(--danger)",
     fontSize: "18px",
     lineHeight: 1,
     cursor: "pointer",
-    width: "28px",
-    height: "32px",
+    width: "34px",
+    height: "38px",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+    transition: "background 0.3s ease",
   },
   addBtn: {
     background: "transparent",
     border: "1px dashed",
     borderRadius: "8px",
-    padding: "10px",
-    fontSize: "12px",
+    padding: "12px",
+    fontSize: "13px",
     letterSpacing: "2px",
-    fontFamily: "Orbitron, Arial",
+    fontFamily: "Orbitron, sans-serif",
     cursor: "pointer",
     textAlign: "center",
-    transition: "opacity 0.2s",
-    marginTop: "4px",
+    transition: "background 0.3s ease",
+    marginTop: "12px",
+  },
+  backBtn: {
+    background: "rgba(255,255,255,0.05)",
+    border: "1px solid",
+    borderRadius: "6px",
+    padding: "4px 10px",
+    fontSize: "11px",
+    letterSpacing: "1px",
+    cursor: "pointer",
+    fontFamily: "Orbitron, sans-serif",
+    transition: "background 0.3s ease",
   },
 };

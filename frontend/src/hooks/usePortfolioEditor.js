@@ -1,12 +1,9 @@
-// frontend/src/hooks/usePortfolioEditor.js
-// Manages custom buy entries stored in localStorage.
-// Falls back to the hardcoded defaults (matching backend/holdings.js) on first run.
-
 import { useState, useEffect } from "react";
+import axios from "axios";
+import { useAuth } from "../context/AuthContext";
 
 const STORAGE_KEY = "my_profits_holdings_v1";
 
-// Default buy entries — mirrors backend/src/holdings.js
 const DEFAULTS = {
   gold: [
     { id: 1, qty: 7,  buyPrice: 10000  },
@@ -20,19 +17,52 @@ const DEFAULTS = {
 };
 
 export function usePortfolioEditor() {
-  const [holdings, setHoldings] = useState(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      return saved ? JSON.parse(saved) : DEFAULTS;
-    } catch {
-      return DEFAULTS;
-    }
-  });
+  const { token } = useAuth();
+  const [holdings, setHoldings] = useState(DEFAULTS);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
 
-  // Persist to localStorage on every change
+  // Load holdings from API or localStorage
   useEffect(() => {
+    const loadHoldings = async () => {
+      if (token) {
+        try {
+          const res = await axios.get("/api/holdings");
+          setHoldings(res.data);
+        } catch (err) {
+          console.error("Failed to fetch holdings from API", err);
+          // Fallback to local if API fails
+          const saved = localStorage.getItem(STORAGE_KEY);
+          if (saved) setHoldings(JSON.parse(saved));
+        }
+      } else {
+        const saved = localStorage.getItem(STORAGE_KEY);
+        if (saved) setHoldings(JSON.parse(saved));
+      }
+      setIsInitialLoad(false);
+    };
+    loadHoldings();
+  }, [token]);
+
+  // Persist to API and localStorage on every change
+  useEffect(() => {
+    if (isInitialLoad) return;
+
     localStorage.setItem(STORAGE_KEY, JSON.stringify(holdings));
-  }, [holdings]);
+    
+    const syncToDB = async () => {
+      if (token) {
+        try {
+          await axios.put("/api/holdings", { holdings });
+        } catch (err) {
+          console.error("Failed to sync holdings to DB", err);
+        }
+      }
+    };
+
+    // Debounce DB sync to avoid spamming the server
+    const timeout = setTimeout(syncToDB, 1000);
+    return () => clearTimeout(timeout);
+  }, [holdings, token, isInitialLoad]);
 
   const updateBuy = (metal, id, field, value) => {
     setHoldings((h) => ({

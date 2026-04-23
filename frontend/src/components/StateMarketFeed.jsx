@@ -61,7 +61,7 @@
 //     letterSpacing: "1px",
 //   },
 // };
-import { useRef } from "react";
+import { useRef, useEffect, useState } from "react";
 import { GOLD_AP_MULTIPLIER, SILVER_AP_MULTIPLIER } from "../utils/apConstants";
 
 export default function StateMarketFeed({ prices }) {
@@ -71,15 +71,29 @@ export default function StateMarketFeed({ prices }) {
   const goldAP   = goldSpot   * GOLD_AP_MULTIPLIER;
   const silverAP = silverSpot * SILVER_AP_MULTIPLIER;
 
+  const [goldDir, setGoldDir] = useState("same");
+  const [silverDir, setSilverDir] = useState("same");
+
   /* ── track direction (up / down / same) without re-renders ── */
   const prevGold   = useRef(null);
   const prevSilver = useRef(null);
 
-  const goldDir   = getDir(prevGold,   goldAP);
-  const silverDir = getDir(prevSilver, silverAP);
+  useEffect(() => {
+    if (prevGold.current !== null) {
+      if (goldAP > prevGold.current) setGoldDir("up");
+      else if (goldAP < prevGold.current) setGoldDir("down");
+      else setGoldDir("same");
+    }
 
-  prevGold.current   = goldAP;
-  prevSilver.current = silverAP;
+    if (prevSilver.current !== null) {
+      if (silverAP > prevSilver.current) setSilverDir("up");
+      else if (silverAP < prevSilver.current) setSilverDir("down");
+      else setSilverDir("same");
+    }
+
+    prevGold.current   = goldAP;
+    prevSilver.current = silverAP;
+  }, [goldAP, silverAP]);
 
   return (
     <div className="glass" style={styles.container}>
@@ -91,14 +105,6 @@ export default function StateMarketFeed({ prices }) {
       <div style={styles.note}>Market-adjusted • Andhra Pradesh</div>
     </div>
   );
-}
-
-/* ── helper: compare new vs previous price ── */
-function getDir(ref, current) {
-  if (ref.current === null) return "same";
-  if (current > ref.current) return "up";
-  if (current < ref.current) return "down";
-  return "same";
 }
 
 /* ── colored rate row ── */
