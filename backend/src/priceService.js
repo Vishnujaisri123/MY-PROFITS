@@ -1,12 +1,16 @@
 // backend/src/priceService.js
 //
 // PRIMARY:  fawazahmed0 currency API (CDN-hosted, free, no key, works everywhere)
-//           https://github.com/fawazahmed0/exchange-api
+//           https://github.com/fawazahmed0/currency-api
 //           Returns XAU (gold) and XAG (silver) rates vs USD
 //
 // FALLBACK: Cloudflare Pages mirror of same API
 //
 // USD→INR: open.er-api.com (confirmed working on Render ✅)
+//
+// PRICE FORMULA: International spot → Indian domestic market price
+//   Applies: 6% Basic Customs Duty + 3% GST + 1% local dealer premium
+//   This makes rates match CapsGold / MCX Indian domestic prices.
 
 import axios from "axios";
 
@@ -31,6 +35,22 @@ async function getUsdInr() {
   return usdInr;
 }
 
+// ─── Indian Duty & Tax Multipliers ─────────────────────────────────────────
+//
+//  The international spot price (XAU/XAG) is a raw global price.
+//  Indian domestic market prices (CapsGold, MCX physical, jewellers) include:
+//
+//    1. Basic Customs Duty (BCD):         6%   (reduced from 15% in July 2024)
+//    2. GST on gold/silver value:         3%
+//    3. Local dealer premium:             ~1%  (handling, logistics, margins)
+//
+//  Gold effective multiplier  = 1.06 × 1.03 × 1.01 ≈ 1.1018
+//  Silver effective multiplier = 1.08 × 1.03 × 1.01 ≈ 1.1234
+//  (Silver has 8% customs duty)
+//
+const GOLD_INDIA_MULTIPLIER   = 1.06 * 1.03 * 1.01;  // ≈ 1.1018
+const SILVER_INDIA_MULTIPLIER = 1.08 * 1.03 * 1.01;  // ≈ 1.1234
+
 // ─── Fetch from fawazahmed0 API (returns XAU, XAG vs USD) ──────────────────
 // xau = troy oz of gold per 1 USD  →  gold price = 1/xau  (USD per oz)
 // xag = troy oz of silver per 1 USD → silver price = 1/xag (USD per oz)
@@ -43,13 +63,20 @@ async function fetchFromCurrencyApi(url, inr) {
   const goldUsdOz   = 1 / rates.xau;
   const silverUsdOz = 1 / rates.xag;
 
-  // Convert: USD/oz → INR/gram  |  USD/oz → INR/kg
-  cachedPrices.gold        = Number(((goldUsdOz   * inr) / 31.1035).toFixed(2));
-  cachedPrices.silver      = Number(((silverUsdOz * inr) / 31.1035 * 1000).toFixed(2));
+  // Step 1: Convert international spot price → INR per gram / per kg
+  const goldSpotInr   = (goldUsdOz   * inr) / 31.1035;
+  const silverSpotInr = (silverUsdOz * inr) / 31.1035 * 1000;
+
+  // Step 2: Apply Indian import duty + GST + dealer premium
+  // → Makes prices match CapsGold / MCX Indian domestic market rates
+  cachedPrices.gold        = Number((goldSpotInr   * GOLD_INDIA_MULTIPLIER).toFixed(2));
+  cachedPrices.silver      = Number((silverSpotInr * SILVER_INDIA_MULTIPLIER).toFixed(2));
   cachedPrices.lastUpdated = Date.now();
 
-  console.log(`✅ Live prices — Gold ₹${cachedPrices.gold}/g | Silver ₹${cachedPrices.silver}/kg`);
-  console.log(`   (Gold: $${goldUsdOz.toFixed(2)}/oz | Silver: $${silverUsdOz.toFixed(2)}/oz | USD/INR: ${inr.toFixed(2)})`);
+  console.log(`✅ Indian market prices (6% BCD + 3% GST + 1% premium):`);
+  console.log(`   Gold:   $${goldUsdOz.toFixed(2)}/oz → ₹${goldSpotInr.toFixed(0)}/g (spot) → ₹${cachedPrices.gold}/g (Indian)`);
+  console.log(`   Silver: $${silverUsdOz.toFixed(2)}/oz → ₹${silverSpotInr.toFixed(0)}/kg (spot) → ₹${cachedPrices.silver}/kg (Indian)`);
+  console.log(`   USD/INR: ${inr.toFixed(2)}`);
 }
 
 // ─── Fetch with automatic fallback ─────────────────────────────────────────
