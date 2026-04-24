@@ -16,8 +16,17 @@ router.post("/register", async (req, res) => {
       return res.status(400).json({ error: "User already exists" });
     }
 
-    // New users start with empty holdings — they add their own data
-    const user = new User({ username, password, holdings: { gold: [], silver: [] } });
+    // New users get sample demo holdings to explore the dashboard
+    const sampleHoldings = {
+      gold: [
+        { id: 1, qty: 5,  buyPrice: 7500  },   // 5g @ ₹7,500/g
+        { id: 2, qty: 10, buyPrice: 8200  },   // 10g @ ₹8,200/g
+      ],
+      silver: [
+        { id: 1, qty: 1, buyPrice: 75000 },    // 1kg @ ₹75,000/kg
+      ],
+    };
+    const user = new User({ username, password, holdings: sampleHoldings });
     await user.save();
 
     const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || "jarvis_secret_key", { expiresIn: "7d" });
