@@ -65,8 +65,9 @@ import { useRef, useEffect, useState } from "react";
 import { GOLD_AP_MULTIPLIER, SILVER_AP_MULTIPLIER } from "../utils/apConstants";
 
 export default function StateMarketFeed({ prices }) {
-  const goldSpot   = prices.gold?.price   || 0;
-  const silverSpot = prices.silver?.price || 0;
+  // Use SPOT price as base — AP multipliers are calibrated against spot
+  const goldSpot   = prices.gold?.spot   || 0;
+  const silverSpot = prices.silver?.spot || 0;
 
   const goldAP   = goldSpot   * GOLD_AP_MULTIPLIER;
   const silverAP = silverSpot * SILVER_AP_MULTIPLIER;
