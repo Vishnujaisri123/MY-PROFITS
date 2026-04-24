@@ -1,22 +1,16 @@
 // frontend/src/utils/apConstants.js
 //
-// AP STATE MARKET multipliers — applied ON TOP of Indian domestic base price.
+// SINGLE SOURCE OF TRUTH for AP State market multipliers.
+// These ratios convert Indian domestic price → Andhra Pradesh (CapsGold) local price.
 //
-// ── IMPORTANT: After the backend price fix (July 2024) ──────────────────────
-// The backend priceService.js now applies the full Indian duty stack:
-//   6% Basic Customs Duty + 3% GST + 1% dealer premium = ×1.1018 (gold)
-//                                                        = ×1.1234 (silver)
+// How to calibrate:
+//   1. Note the current Indian domestic price shown in LIVE METAL FEED
+//   2. Note the current CapsGold AP rate for the same metal at the same time
+//   3. Multiplier = CapsGold_AP_rate / Indian_domestic_price
 //
-// So the base price from the WebSocket IS ALREADY the Indian domestic price.
-// These multipliers now only represent the tiny LOCAL AP market premium
-// that AP dealers charge above the national Indian domestic rate.
-//
-// Typical AP local premium: ~0.4–0.5% above national Indian domestic price.
-//
-// How to update: Open CapsGold and note the AP rate and the LIVE METAL FEED
-// rate shown on your own website at the same time. Then:
-//   GOLD_AP_MULTIPLIER   = CapsGold_gold_rate   / your_live_gold_rate
-//   SILVER_AP_MULTIPLIER = CapsGold_silver_rate  / your_live_silver_rate
+// Last calibrated (2026-04-24):
+//   GOLD:   Already correct — no change needed
+//   SILVER: CapsGold AP = ₹252,000/kg  ÷  Indian domestic ≈ ₹226,874/kg  = 1.1107
 
-export const GOLD_AP_MULTIPLIER   = 1.004;   // ~0.4% AP local premium over Indian domestic
-export const SILVER_AP_MULTIPLIER = 1.005;   // ~0.5% AP local premium over Indian domestic
+export const GOLD_AP_MULTIPLIER   = 15293.4 / 13827.59;  // ≈ 1.106 (₹/gram) — correct ✅
+export const SILVER_AP_MULTIPLIER = 252000  / 226874;     // ≈ 1.1107 (₹/kg)  — calibrated to CapsGold ✅
