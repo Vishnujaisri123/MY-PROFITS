@@ -39,6 +39,7 @@
   - **Flip animation** to toggle between Spot and AP portfolio views
   - **Fullscreen system mode** — tap ⛶ to expand the Arc Reactor to full screen
 - Glassmorphism panels with neon cyan/gold glow effects
+- **Edit Panel** — dark glassmorphic background (`rgba(5,12,25,0.85)`) with cyan border glow and inner box-shadow for a premium feel
 - Dark steel color palette with `Orbitron` and `Inter` fonts
 - Smooth micro-animations on price ticks and value changes
 - Fully responsive layout (desktop 3-column → mobile single column)
@@ -196,9 +197,9 @@ Connect to `ws://<backend-url>` — no authentication required.
 ### Infrastructure
 | Service | Purpose |
 |---------|---------|
-| MongoDB Atlas | Cloud database (user & holdings storage) |
-| Render (free tier) | Backend hosting |
-| Vercel | Frontend hosting |
+| **MongoDB Atlas** (Cluster1) | Cloud database — user accounts & per-user gold/silver holdings |
+| Render (free tier) | Backend hosting with WebSocket support |
+| Vercel | Frontend hosting with automatic SPA routing |
 
 ---
 
@@ -341,10 +342,11 @@ The `frontend/vercel.json` handles SPA routing:
 
 > **Warning:** Never commit real credentials to GitHub.
 
-- `.env` files are listed in `.gitignore` and should never be committed.
-- Passwords are **never stored in plain text** — always bcrypt-hashed.
+- `.env` files are listed in `.gitignore` — **this is intentional and correct**. The database password and JWT secret must never be pushed to GitHub.
+- The `backend/.env` holds `MONGODB_URI` (MongoDB Atlas Cluster1 connection) and `JWT_SECRET` — set these as environment variables on Render for production.
+- Passwords are **never stored in plain text** — always bcrypt-hashed with 10 salt rounds.
 - JWT tokens expire after **7 days** and must be re-issued via login.
-- MongoDB URI and JWT secret must be set as environment variables on Render.
+- If you clone this repo, create your own `backend/.env` locally with your own MongoDB Atlas URI.
 
 ---
 
