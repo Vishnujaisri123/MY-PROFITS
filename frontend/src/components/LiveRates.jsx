@@ -2,16 +2,17 @@ export default function LiveRates({ prices }) {
   return (
     <div className="glass" style={styles.card}>
       <h2 style={styles.title}>LIVE METAL FEED</h2>
+      <div style={styles.subtitle}>🌍 International Spot Rate</div>
 
       <RateRow
-        label="GOLD (g)"
-        price={prices.gold?.price}
+        label="GOLD (₹ / gram)"
+        price={prices.gold?.spot}
         direction={prices.gold?.direction}
       />
 
       <RateRow
-        label="SILVER (1kg)"
-        price={prices.silver?.price}
+        label="SILVER (₹ / kg)"
+        price={prices.silver?.spot}
         direction={prices.silver?.direction}
       />
     </div>
@@ -47,10 +48,18 @@ const styles = {
   title: {
     color: "var(--text-main)",
     letterSpacing: "3px",
-    marginBottom: "8px",
+    marginBottom: "4px",
     fontSize: "14px",
     fontFamily: "Orbitron, sans-serif",
     textTransform: "uppercase",
+  },
+  subtitle: {
+    fontSize: "10px",
+    letterSpacing: "2px",
+    opacity: 0.5,
+    fontFamily: "Inter, sans-serif",
+    marginBottom: "14px",
+    color: "var(--neon)",
   },
   row: {
     display: "flex",

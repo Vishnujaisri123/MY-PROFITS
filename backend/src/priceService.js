@@ -8,9 +8,9 @@
 //
 // USD→INR: open.er-api.com (confirmed working on Render ✅)
 //
-// PRICE FORMULA: International spot → Indian domestic market price
-//   Applies: 6% Basic Customs Duty + 3% GST + 1% local dealer premium
-//   This makes rates match CapsGold / MCX Indian domestic prices.
+// TWO PRICES ARE BROADCAST:
+//   spot  → International market price (USD × INR ÷ troy oz) — shown in LIVE METAL FEED
+//   price → Indian domestic price (spot + duty + GST + premium) — used for P&L & AP market
 
 import axios from "axios";
 
@@ -20,14 +20,17 @@ const CURRENCY_FALLBACK = "https://latest.currency-api.pages.dev/v1/currencies/u
 const FX_URL            = "https://open.er-api.com/v6/latest/USD";
 
 // ─── Cache ─────────────────────────────────────────────────────────────────
-let cachedPrices  = { gold: null, silver: null, lastUpdated: 0 };
+let cachedPrices = {
+  goldSpot: null, silverSpot: null,  // International spot (₹/g, ₹/kg)
+  gold: null,     silver: null,       // Indian domestic    (₹/g, ₹/kg)
+  lastUpdated: 0,
+};
 let usdInr        = null;
 let fxLastUpdated = 0;
 
 // ─── USD → INR  (refresh every 60 min) ─────────────────────────────────────
 async function getUsdInr() {
   if (usdInr && Date.now() - fxLastUpdated < 60 * 60 * 1000) return usdInr;
-
   const res  = await axios.get(FX_URL, { timeout: 8000 });
   usdInr        = res.data.rates.INR;
   fxLastUpdated = Date.now();
@@ -37,23 +40,19 @@ async function getUsdInr() {
 
 // ─── Indian Duty & Tax Multipliers ─────────────────────────────────────────
 //
-//  The international spot price (XAU/XAG) is a raw global price.
-//  Indian domestic market prices (CapsGold, MCX physical, jewellers) include:
+//  International spot is the raw global price with no Indian taxes.
+//  Indian domestic (CapsGold / MCX physical) adds:
+//    1. Basic Customs Duty (BCD):  6%  (reduced from 15% in July 2024 budget)
+//    2. GST on gold/silver:        3%
+//    3. Local dealer premium:     ~1%
 //
-//    1. Basic Customs Duty (BCD):         6%   (reduced from 15% in July 2024)
-//    2. GST on gold/silver value:         3%
-//    3. Local dealer premium:             ~1%  (handling, logistics, margins)
-//
-//  Gold effective multiplier  = 1.06 × 1.03 × 1.01 ≈ 1.1018
-//  Silver effective multiplier = 1.08 × 1.03 × 1.01 ≈ 1.1234
-//  (Silver has 8% customs duty)
+//  Gold   multiplier = 1.06 × 1.03 × 1.01 ≈ 1.1018
+//  Silver multiplier = 1.08 × 1.03 × 1.01 ≈ 1.1234  (silver BCD is 8%)
 //
 const GOLD_INDIA_MULTIPLIER   = 1.06 * 1.03 * 1.01;  // ≈ 1.1018
 const SILVER_INDIA_MULTIPLIER = 1.08 * 1.03 * 1.01;  // ≈ 1.1234
 
-// ─── Fetch from fawazahmed0 API (returns XAU, XAG vs USD) ──────────────────
-// xau = troy oz of gold per 1 USD  →  gold price = 1/xau  (USD per oz)
-// xag = troy oz of silver per 1 USD → silver price = 1/xag (USD per oz)
+// ─── Fetch from fawazahmed0 API ─────────────────────────────────────────────
 async function fetchFromCurrencyApi(url, inr) {
   const res   = await axios.get(url, { timeout: 10000 });
   const rates = res.data?.usd;
@@ -63,26 +62,24 @@ async function fetchFromCurrencyApi(url, inr) {
   const goldUsdOz   = 1 / rates.xau;
   const silverUsdOz = 1 / rates.xag;
 
-  // Step 1: Convert international spot price → INR per gram / per kg
-  const goldSpotInr   = (goldUsdOz   * inr) / 31.1035;
-  const silverSpotInr = (silverUsdOz * inr) / 31.1035 * 1000;
+  // International spot in INR (no duties) — shown in LIVE METAL FEED
+  cachedPrices.goldSpot   = Number(((goldUsdOz   * inr) / 31.1035).toFixed(2));
+  cachedPrices.silverSpot = Number(((silverUsdOz * inr) / 31.1035 * 1000).toFixed(2));
 
-  // Step 2: Apply Indian import duty + GST + dealer premium
-  // → Makes prices match CapsGold / MCX Indian domestic market rates
-  cachedPrices.gold        = Number((goldSpotInr   * GOLD_INDIA_MULTIPLIER).toFixed(2));
-  cachedPrices.silver      = Number((silverSpotInr * SILVER_INDIA_MULTIPLIER).toFixed(2));
+  // Indian domestic price — used for P&L and AP market calculations
+  cachedPrices.gold   = Number((cachedPrices.goldSpot   * GOLD_INDIA_MULTIPLIER).toFixed(2));
+  cachedPrices.silver = Number((cachedPrices.silverSpot * SILVER_INDIA_MULTIPLIER).toFixed(2));
+
   cachedPrices.lastUpdated = Date.now();
 
-  console.log(`✅ Indian market prices (6% BCD + 3% GST + 1% premium):`);
-  console.log(`   Gold:   $${goldUsdOz.toFixed(2)}/oz → ₹${goldSpotInr.toFixed(0)}/g (spot) → ₹${cachedPrices.gold}/g (Indian)`);
-  console.log(`   Silver: $${silverUsdOz.toFixed(2)}/oz → ₹${silverSpotInr.toFixed(0)}/kg (spot) → ₹${cachedPrices.silver}/kg (Indian)`);
-  console.log(`   USD/INR: ${inr.toFixed(2)}`);
+  console.log(`✅ Prices refreshed (USD/INR: ${inr.toFixed(2)}):`);
+  console.log(`   GOLD   — Intl spot: $${goldUsdOz.toFixed(2)}/oz = ₹${cachedPrices.goldSpot}/g  |  Indian: ₹${cachedPrices.gold}/g`);
+  console.log(`   SILVER — Intl spot: $${silverUsdOz.toFixed(2)}/oz = ₹${cachedPrices.silverSpot}/kg  |  Indian: ₹${cachedPrices.silver}/kg`);
 }
 
 // ─── Fetch with automatic fallback ─────────────────────────────────────────
 async function fetchPrices() {
   const inr = await getUsdInr();
-
   try {
     await fetchFromCurrencyApi(CURRENCY_PRIMARY, inr);
   } catch (primaryErr) {
@@ -94,24 +91,20 @@ async function fetchPrices() {
 // ─── PUBLIC: called every second by websocket.js ───────────────────────────
 export async function fetchLivePrices() {
   try {
-    // Refresh from API every 15 minutes
     if (!cachedPrices.gold || Date.now() - cachedPrices.lastUpdated > 15 * 60 * 1000) {
       await fetchPrices();
     }
-
     return {
-      gold:      tick("gold",   cachedPrices.gold),
-      silver:    tick("silver", cachedPrices.silver),
+      gold:      tick("gold",   cachedPrices.goldSpot,   cachedPrices.gold),
+      silver:    tick("silver", cachedPrices.silverSpot, cachedPrices.silver),
       timestamp: Date.now(),
     };
   } catch (err) {
     console.error("❌ All price sources failed:", err.message);
-
-    // Return last known cached price so app stays alive
     if (cachedPrices.gold) {
       return {
-        gold:      tick("gold",   cachedPrices.gold),
-        silver:    tick("silver", cachedPrices.silver),
+        gold:      tick("gold",   cachedPrices.goldSpot,   cachedPrices.gold),
+        silver:    tick("silver", cachedPrices.silverSpot, cachedPrices.silver),
         timestamp: Date.now(),
       };
     }
@@ -119,19 +112,25 @@ export async function fetchLivePrices() {
   }
 }
 
-// ─── Tick simulation (1-second visual movement on cached base price) ────────
+// ─── Tick simulation ────────────────────────────────────────────────────────
+// Single % variation drives BOTH spot and Indian price so they always move in sync.
 let lastTick = { gold: null, silver: null };
 
-function tick(type, basePrice) {
-  const variation = (Math.random() - 0.5) * (type === "gold" ? 20 : 50);
-  const price     = Number((basePrice + variation).toFixed(2));
+function tick(type, spotBase, indianBase) {
+  const pctVariation = (Math.random() - 0.5) * 0.002;         // ±0.1% per second
+  const spotPrice    = Number((spotBase   * (1 + pctVariation)).toFixed(2));
+  const indianPrice  = Number((indianBase * (1 + pctVariation)).toFixed(2));
 
   let direction = "same";
   if (lastTick[type] !== null) {
-    if (price > lastTick[type]) direction = "up";
-    if (price < lastTick[type]) direction = "down";
+    if (spotPrice > lastTick[type]) direction = "up";
+    if (spotPrice < lastTick[type]) direction = "down";
   }
+  lastTick[type] = spotPrice;
 
-  lastTick[type] = price;
-  return { price, direction };
+  return {
+    spot:  spotPrice,   // ← International spot price in INR (no duties)
+    price: indianPrice, // ← Indian domestic price (duty + GST + premium)
+    direction,
+  };
 }
