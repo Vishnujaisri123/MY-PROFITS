@@ -11,10 +11,11 @@ export default function BuyHistory({
   const isGold  = title === "GOLD";
   const accentColor = isGold ? "#ffd36a" : "#c0d8ff";
 
-  /* ── AP price ────────────────────────────────────────────────── */
-  const apPrice = isGold
-    ? prices.gold?.price   * GOLD_AP_MULTIPLIER
-    : prices.silver?.price * SILVER_AP_MULTIPLIER;
+  /* ── AP price — uses spot (same as AP STATE MARKET panel & ArcReactor) ── */
+  const spotPrice = isGold
+    ? (prices.gold?.spot   || prices.gold?.price   / 1.1018)
+    : (prices.silver?.spot || prices.silver?.price / 1.1234);
+  const apPrice = spotPrice * (isGold ? GOLD_AP_MULTIPLIER : SILVER_AP_MULTIPLIER);
 
   /* ── AP calculations ─────────────────────────────────────────── */
   const apBuyDetails  = data.buyDetails.map((b) => ({
