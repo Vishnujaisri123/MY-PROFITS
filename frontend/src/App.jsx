@@ -115,10 +115,11 @@ function MainApp() {
   const goldPortfolio    = calcPortfolio(activeHoldings.gold,   prices.gold.price);
   const silverPortfolio  = calcPortfolio(activeHoldings.silver, prices.silver.price);
 
-  const apPrices = {
-    gold:   prices.gold.spot   * GOLD_AP_MULTIPLIER,
-    silver: prices.silver.spot * SILVER_AP_MULTIPLIER,
-  };
+  // AP price = same formula as StateMarketFeed so portfolio profit matches displayed AP rates
+  const goldAPPrice   = (prices.gold.spot   || prices.gold.price   / (1.06 * 1.03 * 1.01)) * GOLD_AP_MULTIPLIER;
+  const silverAPPrice = (prices.silver.spot || prices.silver.price / (1.08 * 1.03 * 1.01)) * SILVER_AP_MULTIPLIER;
+
+  const apPrices = { gold: goldAPPrice, silver: silverAPPrice };
   const combined = { gold: goldPortfolio, silver: silverPortfolio };
   const apPortfolio = calculateAPPortfolio(combined, apPrices);
 
